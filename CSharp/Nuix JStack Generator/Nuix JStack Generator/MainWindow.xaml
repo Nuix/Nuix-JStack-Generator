@@ -1,0 +1,61 @@
+﻿<Controls:MetroWindow x:Class="Nuix_JStack_Generator.MainWindow"
+        xmlns:Controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Nuix JStack Generator" Height="600" Width="800" WindowStartupLocation="CenterScreen"
+        Icon="NuixGreenish.ico"
+        BorderThickness="0" 
+        GlowBrush="Black"
+        ResizeMode="CanResizeWithGrip"
+
+        WindowTransitionsEnabled="False">
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="2*"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <Button Grid.Row="0" Grid.Column="0" Content="Output Directory" Name="btnSelectOutputDirectory" Click="btnSelectOutputDirectory_Click" Padding="5"/>
+        <TextBox Grid.Row="0" Grid.Column="1" Name="txtOutputDirectory" Text="C:\NuixJStacks" Margin="4,0,0,0" VerticalContentAlignment="Center"/>
+
+        <Grid Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="auto"/>
+                <ColumnDefinition Width="auto"/>
+                <ColumnDefinition Width="auto"/>
+                <ColumnDefinition Width="auto"/>
+            </Grid.ColumnDefinitions>
+
+            <Label Grid.Column="2" Content="Interval (Seconds)"/>
+            <TextBox Grid.Column="3" Name="txtInterval" Width="30" Text="5" TextChanged="txtInterval_TextChanged" PreviewKeyDown="txtInterval_PreviewKeyDown" VerticalContentAlignment="Center"/>
+
+            <Button Grid.Column="0" Content="Generate JStack Now" Name="btnJStackNow" Click="btnJStackNow_Click"/>
+            <Button Grid.Column="4" Content="Begin JStack Gathering" Name="beginJstacking" Click="beginJstacking_Click" Margin="10,0,0,0"/>
+            <Button Grid.Column="5" Content="Stop JStack Gathering" Name="stopJstacking" Click="stopJstacking_Click" IsEnabled="False" Margin="10,0,0,0"/>
+        </Grid>
+
+        <ListBox Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Name="listNuixProcesses"
+                 ScrollViewer.VerticalScrollBarVisibility="Visible" Margin="0,5,0,0">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal" Height="24">
+                        <CheckBox IsChecked="{Binding IsToBeMonitored}" VerticalAlignment="Center"/>
+                        <Label Content="{Binding Details}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <TextBox Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Name="txtLog"
+                 ScrollViewer.VerticalScrollBarVisibility="Visible" IsReadOnly="True" Margin="0,5,0,0"/>
+    </Grid>
+</Controls:MetroWindow>
