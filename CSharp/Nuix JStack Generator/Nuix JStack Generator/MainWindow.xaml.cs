@@ -3,7 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -31,9 +33,12 @@ namespace Nuix_JStack_Generator
         private Regex removeNonNumbers = new Regex("[^0-9]+", RegexOptions.Compiled);
         private DispatcherTimer jstackGenerationTimer;
 
+        private int currentCollectionCount = 0;
+
         public MainWindow()
         {
             InitializeComponent();
+
             nuixProcesses = new ObservableCollection<NuixProcess>();
             listNuixProcesses.ItemsSource = nuixProcesses;
             refreshProcessList();
@@ -77,11 +82,11 @@ namespace Nuix_JStack_Generator
 
         public void log(string message)
         {
-            Dispatcher.BeginInvoke(new Action(() =>
-            {
-                txtLog.AppendText(message + "\n");
-                txtLog.ScrollToEnd();
-            }));
+            _ = Dispatcher.BeginInvoke(new Action(() =>
+              {
+                  txtLog.AppendText(message + "\n");
+                  txtLog.ScrollToEnd();
+              }));
         }
 
         public void jstackAllSelected()
@@ -93,28 +98,36 @@ namespace Nuix_JStack_Generator
 
             Thread t = new Thread(() =>
             {
+                log(string.Format("[{0}] >>>> Beginning JStack Collection Pass...", DateTime.Now));
+
                 lock (nuixProcesses)
                 {
                     foreach (var process in nuixProcesses.Where(p => p.IsToBeMonitored))
                     {
-                        Dispatcher.BeginInvoke(new Action(() =>
-                        {
-                            log(string.Format("[{1}] : Creating JStack for {0}", process.Details, DateTime.Now));
-                        }));
+                        log(string.Format("[{1}] ---- Creating JStack for {0}", process.Details, DateTime.Now));
+
                         jstacksPending = true;
-                        try
-                        {
-                            process.CreateJStack(outputDirectory);
-                        }
+
+                        try { process.CreateJStack(outputDirectory); }
                         catch (Exception exc)
                         {
-                            log(string.Format("[{1}] : Error creating JStack for {0}", process.Details, DateTime.Now));
+                            log(string.Format("[{1}] !!!! Error creating JStack for {0}", process.Details, DateTime.Now));
                             log(exc.ToString());
                         }
+
                         jstacksPending = false;
                     }
                 }
+
+                log(string.Format("[{0}] <<<< Completed JStack Collection Pass", DateTime.Now));
+                currentCollectionCount++;
+
+                _ = Dispatcher.BeginInvoke(new Action(() =>
+                  {
+                      lblCollectionCount.Content = "Collections: " + currentCollectionCount;
+                  }));
             });
+
             t.Start();
         }
 
@@ -123,16 +136,14 @@ namespace Nuix_JStack_Generator
             string outputDirectory = txtOutputDirectory.Text;
             try
             {
-                if (!System.IO.Directory.Exists(outputDirectory))
-                {
-                    System.IO.Directory.CreateDirectory(outputDirectory);
-                }
+                if (!System.IO.Directory.Exists(outputDirectory)) { System.IO.Directory.CreateDirectory(outputDirectory); }
             }
             catch
             {
                 MessageBox.Show("Unable to create output directory: " + outputDirectory);
                 return;
             }
+
             jstackAllSelected();
         }
 
@@ -141,37 +152,40 @@ namespace Nuix_JStack_Generator
             string outputDirectory = txtOutputDirectory.Text;
             try
             {
-                if (!System.IO.Directory.Exists(outputDirectory))
-                {
-                    System.IO.Directory.CreateDirectory(outputDirectory);
-                }
+                if (!System.IO.Directory.Exists(outputDirectory)) { System.IO.Directory.CreateDirectory(outputDirectory); }
             }
             catch
             {
                 MessageBox.Show("Unable to create output directory: " + outputDirectory);
                 return;
             }
-            if (string.IsNullOrWhiteSpace(txtInterval.Text))
-                txtInterval.Text = "5";
+
+            if (string.IsNullOrWhiteSpace(txtInterval.Text)) { txtInterval.Text = "5"; }
             jstackGenerationTimer.Interval = TimeSpan.FromSeconds(int.Parse(txtInterval.Text));
+            currentCollectionCount = 0;
             jstackGenerationTimer.Start();
-            txtInterval.IsEnabled = false;
-            btnJStackNow.IsEnabled = false;
-            beginJstacking.IsEnabled = false;
-            stopJstacking.IsEnabled = true;
-            btnSelectOutputDirectory.IsEnabled = false;
-            txtOutputDirectory.IsEnabled = false;
+
+            // DispatchTimer jstackGenerationTimer first waits interval before making first call so we
+            // are going to manually invoke the first one
+            jstackAllSelected();
+
+            lockGui(true);
+        }
+
+        private void lockGui(bool lockIt)
+        {
+            txtInterval.IsEnabled = !lockIt;
+            btnJStackNow.IsEnabled = !lockIt;
+            beginJstacking.IsEnabled = !lockIt;
+            stopJstacking.IsEnabled = lockIt;
+            btnSelectOutputDirectory.IsEnabled = !lockIt;
+            txtOutputDirectory.IsEnabled = !lockIt;
         }
 
         private void stopJstacking_Click(object sender, RoutedEventArgs e)
         {
             jstackGenerationTimer.Stop();
-            txtInterval.IsEnabled = true;
-            btnJStackNow.IsEnabled = true;
-            beginJstacking.IsEnabled = true;
-            stopJstacking.IsEnabled = false;
-            btnSelectOutputDirectory.IsEnabled = true;
-            txtOutputDirectory.IsEnabled = true;
+            lockGui(false);
         }
 
         private void btnSelectOutputDirectory_Click(object sender, RoutedEventArgs e)
