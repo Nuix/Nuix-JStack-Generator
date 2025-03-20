@@ -12,7 +12,7 @@ namespace Nuix_JStack_Generator
 {
     public class NuixProcess
     {
-        private static Regex nuixProcessMatcher = new Regex(@"(nuix_((app)|(console)|(single_worker)|(worker_agent))|(javaw?)|(nuix-ims)|(nuix-[^\.]+))", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static Regex nuixProcessMatcher = new Regex(@"(nuix_((app)|(console)|(single_worker)|(worker_agent)|(server))|(javaw?)|(nuix-ims)|(nuix[\-_][^\.]+))", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static Regex workerPathTrim = new Regex(@"\\bin$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         private static string appRootDirectory = "";
         private static string localJstackExe = "";
@@ -78,6 +78,8 @@ namespace Nuix_JStack_Generator
                         return "Nuix Agent";
                     case "nuix-ims":
                         return "Nuix IMS";
+                    case "nuix_server":
+                        return "Nuix Server";
                     case "java":
                     case "javaw":
                         string title = actualProcess.MainWindowTitle;
